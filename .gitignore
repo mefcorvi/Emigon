@@ -2,3 +2,5 @@
 *.*~
 # emacs temp files
 *#*
+#ebin
+*/ebin/*
