@@ -4,3 +4,5 @@
 *#*
 #ebin
 */ebin/*
+#logfile
+*/game_log.log

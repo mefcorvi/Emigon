@@ -23,9 +23,11 @@ start_link() ->
 %% Supervisor callbacks
 %% ===================================================================
 init([]) ->
+    UsersDataPath = filename:join([?DataPath, "users.dets"]),
+    UsersServerOptions = #user_server_options{dataPath=UsersDataPath},
     {ok, { {one_for_one, 5, 10}, [
 				  ?CHILD(web_server, worker),
-				  ?CHILD(user_server, worker),
+				  {user_server, {user_server, start_link, [UsersServerOptions]}, permanent, 5000, worker, [user_server]},
 				  {region1_server, {region_server, start_link, [1]}, permanent, 5000, worker, [region_server]}
 				 ]}
     }.

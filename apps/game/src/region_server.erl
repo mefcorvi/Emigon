@@ -24,11 +24,12 @@ init(RegionId) ->
     {ok, #state{}}.
 
 open_dets(RegionId) ->
+    FilePath = filename:join([?DataPath, "regions", integer_to_list(RegionId), "region.dets"]),
     Opts = [
-	    {file, filename:join([?DataPath, "regions", integer_to_list(RegionId), "region.dets"])},
+	    {file, FilePath},
 	    {keypos, 2}
 	   ],
-    ?Log(Opts),
+    ?Log("Started in ~p", FilePath),
     case dets:open_file(?TableName, Opts) of
 	{ok, ?TableName} -> ?Log("Region ~p loaded", [RegionId]),
 			 {ok, loaded};

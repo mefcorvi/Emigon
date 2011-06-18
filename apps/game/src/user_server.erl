@@ -4,21 +4,22 @@
 -include("../include/game.hrl").
 
 %% API
--export([start_link/0, create_new/2, login/2]).
+-export([start_link/1, create_new/2, login/2, clear_all/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(TableName, ?MODULE).
 -record(state, {}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Options = #user_server_options{}) ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, Options, []).
 
 create_new(Login, Pwd) ->
     gen_server:call(?SERVER, {create_new, Login, Pwd}).
@@ -34,15 +35,15 @@ clear_all() ->
 %%%===================================================================
 
 %% @doc Initializes user_server. It loads dets table of users list.
--spec init(nil()) -> {ok, State::#state{}} | {stop, Reason::term()}.
-init([]) ->
+-spec init(#user_server_options{}) -> {ok, State::#state{}} | {stop, Reason::term()}.
+init(ServerOptions = #user_server_options{dataPath = DataPath}) ->
     Opts = [
-	    {file, filename:join([?DataPath, "users.dets"])},
+	    {file, DataPath},
 	    {keypos, 2}
 	   ],
-    ?Log("Started"),
-    case dets:open_file(?MODULE, Opts) of
-	{ok, ?MODULE} -> {ok, #state{}};
+    ?Log("Started in directory: ~p", DataPath),
+    case dets:open_file(?TableName, Opts) of
+	{ok, ?TableName} -> {ok, #state{}};
 	{error, _Reason} -> {stop, _Reason}
     end.
 
@@ -83,17 +84,16 @@ code_change(_OldVsn, State, _Extra) ->
 %% @doc Creates the new user
 -spec create_new_user(string(), string()) -> {ok, registered} | {error, already_registered}.
 create_new_user(Login, Pwd) ->
-    case dets:lookup(?MODULE, Login) of
-	[] -> dets:insert(?MODULE, #user{login=Login, password=Pwd, regionId=1}),
+    case dets:lookup(?TableName, Login) of
+	[] -> dets:insert(?TableName, #user{login=Login, password=Pwd, regionId=1}),
 	      {ok, registered};
 	_ -> {error, already_registered}
     end.
 
 %% @doc Returns an user with the specified login and password from the database.
--spec process_login(string(), string()) -> {ok, #user{}} | {error, wrong_password} |
-					   {error, not_registered}.
+-spec process_login(string(), string()) -> {ok, #user{}} | {error, Reason :: term()}.
 process_login(Login, Pwd) ->
-    case dets:lookup(?MODULE, Login) of
+    case dets:lookup(?TableName, Login) of
 	[User] -> case User#user.password of
 		      Pwd -> {ok, User};
 		      _ -> {error, wrong_password}
@@ -102,6 +102,6 @@ process_login(Login, Pwd) ->
     end.
 
 %% @doc Clear all the users
--spec clear_all()-> no_return().
+-spec clear_all()-> ok | {error, Reason :: term()}.
 process_clear_all() ->
-    ok.
+    dets:delete_all_objects(?TableName).

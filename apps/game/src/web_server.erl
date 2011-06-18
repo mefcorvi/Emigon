@@ -69,8 +69,9 @@ handle_websocket(Ws, Sid) ->
 		    Ws:send_term({err, Error})
 	    end,
 	    handle_websocket(Ws, Sid);
-	{'EXIT', Sid, _} -> % сессия погибла, перезапустим её
+	{'EXIT', Sid, _Reason} -> % сессия погибла, перезапустим её
 	    Ws:send_term({session_died}),
+	    ?Log("Session ~p died because ~p", [Sid, _Reason]),
             handle_websocket(Ws, start_session(Ws));
 	_Ignore ->
 	    handle_websocket(Ws, Sid)

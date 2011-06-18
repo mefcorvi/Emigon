@@ -1,18 +1,24 @@
--record(userRole, {
+%% @doc Role of the user in the system
+-record(user_role, {
 	  level = user
 	 }).
 
+%% @doc Definition of the user
 -record(user, {
 	  login :: nonempty_string(),
 	  password :: nonempty_string(),
-	  role = #userRole{} :: #userRole{},
+	  role = #user_role{} :: #user_role{},
 	  regionId :: integer()
 	 }).
 
--define(Log(Str), erlang:apply(error_logger, info_msg, [lists:concat(["[", ?MODULE, "] ", Str, "~n"])])).
+-record(user_server_options, {
+	  dataPath :: string()
+	 }).
 
--define(Log(Str, Args), erlang:apply(error_logger, info_msg, [lists:concat(["[", ?MODULE, "] ", Str, "~n"]), Args])).
+-define(Log(Str), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]))).
+-define(Log(Str, Args), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]), [Args])).
 
 -define(BasePath, "/home/mefcorvi/projects/game").
 -define(DataPath, "/home/mefcorvi/projects/game/data").
 -define(StaticPath, "/home/mefcorvi/projects/game/static").
+-define(PrivatePath, "/home/mefcorvi/projects/game/private").
