@@ -1,0 +1,9 @@
+{application,game,
+             [{description,[]},
+              {vsn,"0.0.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,sasl,gproc]},
+              {mod,{game_app,[]}},
+              {env,[]},
+              {modules,[game_app,game_sup,game_util,region_server,session,
+                        session_sup,socket_wrap,user_server,web_server]}]}.

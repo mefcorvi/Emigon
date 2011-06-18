@@ -1,0 +1,4 @@
+{application,game}.
+{packages,[]}.
+{modules,[game_app,game_sup,game_util,region_server,session,socket_wrap,
+          web_server]}.

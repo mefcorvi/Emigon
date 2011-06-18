@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sh rel/game-node/bin/game-node ping
