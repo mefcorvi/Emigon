@@ -41,7 +41,7 @@ init(ServerOptions = #user_server_options{dataPath = DataPath}) ->
 	    {file, DataPath},
 	    {keypos, 2}
 	   ],
-    ?Log("Started in directory: ~p", DataPath),
+    ?Log("Started in directory: ~p", [DataPath]),
     case dets:open_file(?TableName, Opts) of
 	{ok, ?TableName} -> {ok, #state{}};
 	{error, _Reason} -> {stop, _Reason}
@@ -85,7 +85,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec create_new_user(string(), string()) -> {ok, registered} | {error, already_registered}.
 create_new_user(Login, Pwd) ->
     case dets:lookup(?TableName, Login) of
-	[] -> dets:insert(?TableName, #user{login=Login, password=Pwd, regionId=1}),
+	[] -> dets:insert(?TableName, #user{login=Login, password=Pwd}),
 	      {ok, registered};
 	_ -> {error, already_registered}
     end.

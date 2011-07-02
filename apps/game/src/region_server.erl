@@ -5,45 +5,45 @@
 -behaviour(gen_server).
 -include("../include/game.hrl").
 
--export([start_link/1]).
+-export([start_link/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--define(SERVER, ?MODULE).
--define(TableName, ?MODULE).
 -record(state, {}).
 
--spec start_link(integer()) -> no_return().
-start_link(RegionId) when is_integer(RegionId) ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, RegionId, []).
+-spec start_link(integer(), string(), list()) -> no_return().
+start_link(RegionId, Name, Coords) when is_integer(RegionId) ->
+    gen_server:start_link(?MODULE, {region, RegionId, Name, Coords}, []).
 
--spec init(integer()) -> {ok, #state{}}.
-init(RegionId) ->
-    {ok, loaded} = open_dets(RegionId),
-    {ok, loaded} = load_data(),
+-spec init({region, integer(), string()}) -> {ok, #state{}}.
+init({region, RegionId, Name, Coords}) ->
+    {ok, loaded} = open_dets(Name),
+    {ok, loaded} = load_data(Name),
+    gproc:add_local_name({region, Coords}),
+    ?Log("Region server started and registered as ~p", [{region, RegionId}]),
     {ok, #state{}}.
 
-open_dets(RegionId) ->
-    FilePath = filename:join([?DataPath, "regions", integer_to_list(RegionId), "region.dets"]),
+open_dets(Name) ->
+    FilePath = filename:join([?DataPath, "regions", string:concat(Name, ".dets")]),
     Opts = [
 	    {file, FilePath},
 	    {keypos, 2}
 	   ],
-    ?Log("Started in ~p", FilePath),
-    case dets:open_file(?TableName, Opts) of
-	{ok, ?TableName} -> ?Log("Region ~p loaded", [RegionId]),
+    case dets:open_file(Name, Opts) of
+	{ok, Name} -> ?Log("Loading data for ~p from ~p", [Name, FilePath]),
 			 {ok, loaded};
 	{error, _Reason} ->
-	    ?Log("Region ~p cannot be loaded: ~p", [RegionId, _Reason]),
+	    ?Log("Region ~p cannot be loaded: ~p", [Name, _Reason]),
 	    {error, _Reason}
     end.
 
-load_data() ->
-    dets:traverse(?TableName, fun(X) -> load_item(X) end),
+load_data(Name) ->
+    dets:traverse(Name, fun(X) -> load_item(X) end),
+    ?Log("Data for ~p loaded", [Name]),
     {ok, loaded}.
 
 load_item(X) ->
-    ?Log(X).
+    ?Log("Item").
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

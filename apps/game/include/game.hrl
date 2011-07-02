@@ -8,7 +8,8 @@
 	  login :: nonempty_string(),
 	  password :: nonempty_string(),
 	  role = #user_role{} :: #user_role{},
-	  regionId :: integer()
+	  x :: integer(),
+	  y :: integer()
 	 }).
 
 -record(user_server_options, {
@@ -16,7 +17,7 @@
 	 }).
 
 -define(Log(Str), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]))).
--define(Log(Str, Args), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]), [Args])).
+-define(Log(Str, Args), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]), Args)).
 
 -define(BasePath, "/home/mefcorvi/projects/game").
 -define(DataPath, "/home/mefcorvi/projects/game/data").
