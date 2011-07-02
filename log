@@ -1,0 +1,3 @@
+#!/bin/bash
+
+vim rel/game-node/log/sasl-error.log
