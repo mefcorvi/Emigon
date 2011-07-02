@@ -16,6 +16,12 @@
 	  dataPath :: string()
 	 }).
 
+-record(region, {
+	  name :: string(),
+	  x :: integer(),
+	  y :: integer()
+	 }).
+
 -define(Log(Str), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]))).
 -define(Log(Str, Args), log4erl:log(info, lists:concat(["[", ?MODULE, "] ", Str]), Args)).
 

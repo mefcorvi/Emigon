@@ -5,22 +5,23 @@
 -behaviour(gen_server).
 -include("../include/game.hrl").
 
--export([start_link/3]).
+-export([start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -record(state, {}).
 
--spec start_link(integer(), string(), list()) -> no_return().
-start_link(RegionId, Name, Coords) when is_integer(RegionId) ->
-    gen_server:start_link(?MODULE, {region, RegionId, Name, Coords}, []).
+-spec start_link(#region{}) -> tuple().
+start_link(Region=#region{}) ->
+    gen_server:start_link(?MODULE, Region, []).
 
--spec init({region, integer(), string()}) -> {ok, #state{}}.
-init({region, RegionId, Name, Coords}) ->
-    {ok, loaded} = open_dets(Name),
-    {ok, loaded} = load_data(Name),
-    gproc:add_local_name({region, Coords}),
-    ?Log("Region server started and registered as ~p", [{region, RegionId}]),
+-spec init(#region{}) -> {ok, #state{}}.
+init(#region{name=RegionName,x=X,y=Y}) ->
+    {ok, loaded} = open_dets(RegionName),
+    {ok, loaded} = load_data(RegionName),
+    LocalName = {region, [X, Y]},
+    gproc:add_local_name(LocalName),
+    ?Log("Region server started and registered as ~p", [LocalName]),
     {ok, #state{}}.
 
 open_dets(Name) ->

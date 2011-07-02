@@ -44,8 +44,8 @@ run_region_supervisors() ->
     Regions = read_regions(),
     run_next_supervisor(Regions).
 
-run_next_supervisor([{region, ServerName, RegionId, Coords}|T]) when is_list(ServerName) ->
-    {ok, Pid} = supervisor:start_child(?SERVER, [RegionId, ServerName, Coords]),
+run_next_supervisor([#region{}=Region|T]) ->
+    {ok, Pid} = supervisor:start_child(?SERVER, [Region]),
     ?Log("Started new region server ~p", [Pid]),
     run_next_supervisor(T);
 
