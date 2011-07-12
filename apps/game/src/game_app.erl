@@ -3,11 +3,14 @@
 -include("../include/game.hrl").
 
 %% Application callbacks
--export([start/2, stop/1]).
+-export([start/0, start/2, stop/1]).
 
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
+
+start() ->
+    start(normal, []).
 
 start(_StartType, _StartArgs) ->
     error_logger:delete_report_handler(error_logger),

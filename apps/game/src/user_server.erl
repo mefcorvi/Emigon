@@ -94,10 +94,7 @@ create_new_user(Login, Pwd) ->
 -spec process_login(string(), string()) -> {ok, #user{}} | {error, Reason :: term()}.
 process_login(Login, Pwd) ->
     case dets:lookup(?TableName, Login) of
-	[User] -> case User#user.password of
-		      Pwd -> {ok, User};
-		      _ -> {error, wrong_password}
-		  end;
+	[#user{password=Pwd} = User] -> {ok, User};
 	_ -> {error, not_registered}
     end.
 

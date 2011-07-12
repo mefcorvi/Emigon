@@ -3,7 +3,7 @@
 -include("../include/game.hrl").
 
 %% API
--export([start_link/0, lookup/1]).
+-export([start_link/0, lookup/1, register_as/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -11,7 +11,12 @@
 -define(SERVER, ?MODULE).
 
 lookup([X, Y]) when is_integer(X), is_integer(Y) ->
-    gproc:lookup_local_name({region, [X, Y]}).
+    {region_server, gproc:lookup_local_name({region, [X, Y]})}.
+
+register_as([X, Y]) ->
+    LocalName = {region, [X, Y]},
+    gproc:add_local_name(LocalName),
+    ?Log("Region server registered as ~p", [LocalName]).
 
 start_link() ->
     Pid = supervisor:start_link({local, ?SERVER}, ?MODULE, []),

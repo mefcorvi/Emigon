@@ -5,6 +5,9 @@
 #ebin
 */ebin/*
 ebin
+#eunit
+*/.eunit/*
+.eunit
 #logfile
 */game_log.log
 #rel

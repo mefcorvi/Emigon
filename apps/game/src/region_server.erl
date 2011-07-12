@@ -5,50 +5,76 @@
 -behaviour(gen_server).
 -include("../include/game.hrl").
 
--export([start_link/1]).
+% API
+-export([start_link/1, add_item/2, remove_item/2, list/1, lookup/2]).
+
+% gen_server
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {
+	  objectsTable
+	 }).
 
 -spec start_link(#region{}) -> tuple().
-start_link(Region=#region{}) ->
+start_link(Region) when is_record(Region, region) ->
     gen_server:start_link(?MODULE, Region, []).
+
+add_item(RegionItem, #state{objectsTable=ObjectsTable}) 
+  when is_record(RegionItem, region_item) ->
+    dets:insert(ObjectsTable, RegionItem);
+
+add_item(RegionItem, {region_server, Pid}) when is_record(RegionItem, region_item) ->
+    gen_server:call(Pid, {add_item, RegionItem}).
+
+remove_item(ItemId, #state{objectsTable=ObjectsTable}) -> 
+    dets:delete(ObjectsTable, ItemId);
+
+remove_item(ItemId, {region_server, Pid}) ->
+    gen_server:call(Pid, {remove_item, ItemId}).
+
+list(#state{objectsTable=ObjectsTable}) ->
+    dets:tab2list(ObjectsTable);
+
+list({region_server, Pid}) ->
+    gen_server:call(Pid, {list}).
+
+lookup(ItemId, #state{objectsTable=ObjectsTable}) ->
+    Result = dets:lookup(ObjectsTable, ItemId),
+    case Result of
+	[#region_item{}=RegionItem] ->
+	    RegionItem;
+	_Other ->
+	    undefined
+    end;
+
+lookup(ItemId, {region_server, Pid}) ->
+    gen_server:call(Pid, {lookup, ItemId}).
 
 -spec init(#region{}) -> {ok, #state{}}.
 init(#region{name=RegionName,x=X,y=Y}) ->
-    {ok, loaded} = open_dets(RegionName),
-    {ok, loaded} = load_data(RegionName),
-    LocalName = {region, [X, Y]},
-    gproc:add_local_name(LocalName),
-    ?Log("Region server started and registered as ~p", [LocalName]),
-    {ok, #state{}}.
+    ObjectsTable = load_from_file(RegionName),
+    regions_sup:register_as([X, Y]),
+    {ok, #state{objectsTable=ObjectsTable}}.
 
-open_dets(Name) ->
-    FilePath = filename:join([?DataPath, "regions", string:concat(Name, ".dets")]),
-    Opts = [
-	    {file, FilePath},
-	    {keypos, 2}
-	   ],
-    case dets:open_file(Name, Opts) of
-	{ok, Name} -> ?Log("Loading data for ~p from ~p", [Name, FilePath]),
-			 {ok, loaded};
-	{error, _Reason} ->
-	    ?Log("Region ~p cannot be loaded: ~p", [Name, _Reason]),
-	    {error, _Reason}
-    end.
+handle_call({add_item,RegionItem}, _From, State) ->
+    add_item(RegionItem, State),
+    {reply, ok, State};
 
-load_data(Name) ->
-    dets:traverse(Name, fun(X) -> load_item(X) end),
-    ?Log("Data for ~p loaded", [Name]),
-    {ok, loaded}.
+handle_call({remove_item, ItemId}, _From, State) ->
+    remove_item(ItemId, State),
+    {reply, ok, State};
 
-load_item(X) ->
-    ?Log("Item").
+handle_call({list}, _From, State) ->
+    Reply = list(State),
+    {reply, Reply, State};
+
+handle_call({lookup, ItemId}, _From, State) ->
+    Reply = lookup(ItemId, State),
+    {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, unknown_command, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -65,3 +91,21 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+load_from_file(RegionName) ->
+    {ok, loaded} = open_dets(RegionName),
+    RegionName.
+
+open_dets(Name) ->
+    FilePath = filename:join([?DataPath, "regions", string:concat(Name, ".dets")]),
+    Opts = [
+	    {file, FilePath},
+	    {keypos, 2},
+	    {auto_save, 10000}
+	   ],
+    case dets:open_file(Name, Opts) of
+	{ok, Name} -> ?Log("Loading data for ~p from ~p", [Name, FilePath]),
+			 {ok, loaded};
+	{error, _Reason} ->
+	    ?Log("Region ~p cannot be loaded: ~p", [Name, _Reason]),
+	    {error, _Reason}
+    end.
