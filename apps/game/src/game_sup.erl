@@ -4,7 +4,7 @@
 -include("../include/game.hrl").
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -16,13 +16,13 @@
 %% API functions
 %% ===================================================================
 
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start_link(Options) ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, Options).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
-init([]) ->
+init(Options) ->
     ?Log("Starting the game supervisor..."),
     UsersDataPath = filename:join([?DataPath, "users.dets"]),
     UsersServerOptions = #user_server_options{dataPath=UsersDataPath},
