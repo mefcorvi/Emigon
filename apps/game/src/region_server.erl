@@ -89,7 +89,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 load_from_file(RegionName) ->
-    {ok, loaded} = open_dets(RegionName),
+    open_dets(RegionName),
     RegionName.
 
 open_dets(Name) ->
@@ -104,5 +104,5 @@ open_dets(Name) ->
 			 {ok, loaded};
 	{error, Reason} ->
 	    ?Log("Region ~p cannot be loaded: ~p", [Name, Reason]),
-	    {error, Reason}
+	    throw({error, Reason})
     end.
