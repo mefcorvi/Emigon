@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start() ->
-    start(normal, []).
+    start([]).
 
 start(Options) ->
     start(normal, Options).

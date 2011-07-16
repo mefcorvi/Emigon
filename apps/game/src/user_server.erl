@@ -4,7 +4,7 @@
 -include("../include/game.hrl").
 
 %% API
--export([start_link/1, create_new/2, login/2, clear_all/0]).
+-export([start_link/1, create_new/2, login/2, clear_all/0, stop/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -30,22 +30,20 @@ login(Login, Pwd) ->
 clear_all() ->
     gen_server:call(?SERVER, {clear_all}).
 
+stop() ->
+    gen_server:call(?SERVER, stop).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
 %% @doc Initializes user_server. It loads dets table of users list.
 -spec init(#user_server_options{}) -> {ok, State::#state{}} | {stop, Reason::term()}.
-init(ServerOptions = #user_server_options{dataPath = DataPath}) ->
-    Opts = [
-	    {file, DataPath},
-	    {keypos, 2}
-	   ],
+init(#user_server_options{dataPath = DataPath}) ->
+    process_flag(trap_exit, true),
+    load_data(DataPath),
     ?Log("Started in directory: ~p", [DataPath]),
-    case dets:open_file(?TableName, Opts) of
-	{ok, ?TableName} -> {ok, #state{}};
-	{error, _Reason} -> {stop, _Reason}
-    end.
+    {ok, #state{}}.
 
 %% Handles login messages
 handle_call({login, Login, Pwd}, _, State) ->
@@ -61,9 +59,11 @@ handle_call({clear_all}, _, State) ->
     Reply = process_clear_all(),
     {reply, Reply, State};
 
+handle_call(stop, _, State) ->
+    {stop, normal, ok, State};
+
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, {unknown_command, _Request}, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -72,6 +72,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    dets:close(?TableName),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -80,6 +81,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+load_data(DataPath) ->
+    Opts = [
+	    {file, DataPath},
+	    {keypos, 2}
+	   ],
+    case dets:open_file(?TableName, Opts) of
+	{ok, ?TableName} -> ?TableName;
+	{error, _Reason} -> throw({error, _Reason})
+    end.
 
 %% @doc Creates the new user
 -spec create_new_user(string(), string()) -> {ok, registered} | {error, already_registered}.
